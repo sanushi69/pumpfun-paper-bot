@@ -5,11 +5,11 @@
 // It waits until a coin has survived its launch phase, then buys only when the
 // recent tape shows broad, accelerating buying (many distinct wallets, net SOL
 // flowing in, price pushing to a new high) with the creator still holding. It
-// sizes in small, adds only into strength, and exits fast: a fixed take-profit,
-// a tight stop, a trailing stop once a position is up, a flow-reversal exit,
-// an exit the moment the creator sells, and a hard time limit. No clock, no
-// randomness, no I/O: a pure function of the batches the harness sends, so the
-// two grading runs produce identical action logs.
+// buys once, small (0.10 SOL, capped at 1% of the coin's real SOL reserve),
+// never adds, and exits fast: a wide take-profit, a tight stop, a trailing
+// stop once a position is up, an exit the moment the creator sells, and a hard
+// time limit. No clock, no randomness, no I/O: a pure function of the batches
+// the harness sends, so the two grading runs produce identical action logs.
 //
 // How the wire works (from the kit protocol): the harness opens with a hello
 // line (capital, caps, fees, latency in slots), then sends one batch per slot
@@ -21,9 +21,10 @@
 // one base + priority tx fee; a sell returns tokens * vq / (vt + t) quote
 // before the same fees. A round trip therefore costs roughly 2.5% of the
 // stake in curve fees plus two tx fees, which is why the first buy is sized
-// at 0.06 SOL (the tx fees are then a small share of the stake) and why the
-// take-profit sits far above the stop: losers are cut at -12% while winners
-// are ridden to +35% or trailed.
+// at 0.10 SOL (the tx fees are then a small share of the stake) and why the
+// take-profit sits far above the stop: losers are cut at -6% while winners
+// are ridden to +150% or trailed, because on this data the whole profit comes
+// from the few coins that run 2-3x, and a +20% target sold them far too early.
 
 import {
   runBot,
@@ -101,28 +102,28 @@ export interface Params {
 
 export const DEFAULT_PARAMS: Params = {
   lookback: 40,
-  minAge: 20,
-  minNetSol: 0.1,
-  minBuys: 3,
-  minBuyers: 3,
-  minRise: 0.03,
+  minAge: 60,
+  minNetSol: 0.2,
+  minBuys: 4,
+  minBuyers: 4,
+  minRise: 0.05,
   nearHigh: 0.97,
   maxTopBuyer: 0.45,
   minRealSol: 1,
   maxRealSol: 10,
   maxSingleSellSol: 2,
-  firstBuySol: 0.06,
+  firstBuySol: 0.1,
   addBuySol: 0.06,
-  maxPerCoinSol: 0.5,
+  maxPerCoinSol: 0.1,
   addGap: 2,
-  addStep: 0.02,
+  addStep: 1.0,
   buySlipBps: 1000,
-  takeProfit: 0.2,
+  takeProfit: 1.5,
   stopLoss: 0.06,
   trailArm: 0.25,
   trailGiveback: 0.15,
   flowWindow: 20,
-  flowExitSol: 0.3,
+  flowExitSol: 100,
   maxHold: 3600,
   cooldown: 120,
   maxEntriesPerCoin: 3,
